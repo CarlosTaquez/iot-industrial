@@ -1,0 +1,5 @@
+{
+  "alert_id": "alert-001",
+  "sensor_id": "sensor_A",
+  "chosen_action": "APAGADO_INMEDIATO"
+}

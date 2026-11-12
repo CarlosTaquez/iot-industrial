@@ -1,0 +1,698 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT Industrial | Dashboard</title>
+
+    <style>
+        :root {
+            --bg: #0b1120;
+            --panel: #172033;
+            --border: #2b374b;
+            --text: #f1f5f9;
+            --muted: #94a3b8;
+            --blue: #38bdf8;
+            --green: #22c55e;
+            --yellow: #facc15;
+            --red: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        header {
+            padding: 24px 32px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 25px;
+        }
+
+        h2 {
+            font-size: 18px;
+            margin: 0 0 20px;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            margin: 8px 0 0;
+        }
+
+        .connection {
+            padding: 10px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--yellow);
+        }
+
+        main {
+            max-width: 1450px;
+            margin: auto;
+            padding: 30px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin-bottom: 25px;
+        }
+
+        .card, .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 22px;
+        }
+
+        .card span {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .card strong {
+            display: block;
+            font-size: 32px;
+            margin-top: 12px;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 22px;
+        }
+
+        .sensors {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .sensor {
+            padding: 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg);
+        }
+
+        .sensor-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sensor-value {
+            font-size: 25px;
+            font-weight: bold;
+            margin: 14px 0 6px;
+        }
+
+        .status {
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .normal {
+            color: var(--green);
+        }
+
+        .warning {
+            color: var(--yellow);
+        }
+
+        .critical {
+            color: var(--red);
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .alert {
+            padding: 15px;
+            border-left: 4px solid var(--yellow);
+            background: var(--bg);
+            border-radius: 6px;
+            margin-bottom: 12px;
+        }
+
+        .alert.critical-alert {
+            border-left-color: var(--red);
+        }
+
+        .alert p {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        button {
+            border: none;
+            border-radius: 6px;
+            padding: 10px 14px;
+            background: var(--blue);
+            color: #07111f;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .empty {
+            color: var(--muted);
+            padding: 15px 0;
+        }
+
+        .panel + .panel {
+            margin-top: 22px;
+        }
+
+        @media (max-width: 950px) {
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 520px) {
+            header, main {
+                padding: 18px;
+            }
+
+            .stats, .sensors {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <div>
+        <h1>IoT Industrial</h1>
+        <p class="subtitle">
+            Plataforma de Mantenimiento Predictivo
+        </p>
+    </div>
+
+    <div class="connection" id="connectionStatus">
+        Desconectado
+    </div>
+</header>
+
+<main>
+
+    <section class="stats">
+        <div class="card">
+            <span>Sensores registrados</span>
+            <strong id="totalSensors">10</strong>
+        </div>
+
+        <div class="card">
+            <span>Sensores normales</span>
+            <strong id="normalSensors">--</strong>
+        </div>
+
+        <div class="card">
+            <span>Advertencias</span>
+            <strong id="warningSensors">--</strong>
+        </div>
+
+        <div class="card">
+            <span>Alertas críticas</span>
+            <strong id="criticalSensors">--</strong>
+        </div>
+    </section>
+
+    <div class="layout">
+
+        <section class="panel">
+            <h2>Monitoreo de sensores</h2>
+            <div class="sensors" id="sensorGrid"></div>
+        </section>
+
+        <div>
+            <section class="panel">
+                <h2>Alertas en tiempo real</h2>
+                <div id="alertsContainer">
+                    <p class="empty">
+                        Esperando alertas del sistema...
+                    </p>
+                </div>
+            </section>
+
+            <section class="panel">
+                <h2>Consola del operador</h2>
+                <div id="operatorConsole">
+                    <p class="empty">
+                        No hay decisiones pendientes.
+                    </p>
+                </div>
+
+                <div class="section">
+                    <h2>Historial de decisiones</h2>
+
+                    <div id="decisionHistory">
+                        <p class="empty">Todavía no se han tomado decisiones.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+    </div>
+
+</main>
+
+<script>
+    const sensorGrid = document.getElementById("sensorGrid");
+
+    const sensors = "ABCDEFGHIJ".split("");
+
+    const sensorStates = {};
+
+    sensors.forEach(letter => {
+        const sensorId = `sensor_${letter}`;
+
+        const card = document.createElement("div");
+        card.className = "sensor";
+        card.id = sensorId;
+
+        card.innerHTML = `
+            <div class="sensor-top">
+                <strong>${sensorId}</strong>
+                <span class="status muted">SIN DATOS</span>
+            </div>
+
+            <div class="sensor-value">--</div>
+            <small class="muted">Vibración</small>
+        `;
+
+        sensorGrid.appendChild(card);
+    });
+
+    const connectionStatus = document.getElementById("connectionStatus");
+
+    let plantSocket;
+
+    function connectPlantMonitor() {
+
+        plantSocket = new WebSocket(
+            "ws://localhost:8081/ws/plant"
+        );
+
+        plantSocket.onopen = () => {
+            console.log("[WEBSOCKET] Conectado a plant_monitor_backend");
+
+            connectionStatus.textContent = "Planta conectada";
+            connectionStatus.style.color = "#22c55e";
+        };
+
+        plantSocket.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+
+                console.log("[PLANTA] Mensaje recibido:", data);
+
+                // Mostrar alertas críticas y advertencias
+                if (data.type === "CRITICAL" || data.type === "WARNING") {
+                    showPlantAlert(data);
+                }
+
+                // Actualizar el estado de los sensores
+                if (data.sensor_id && data.status && data.vibration !== undefined) {
+                    updateSensor(data);
+                }
+
+            } catch (error) {
+                console.error(
+                    "[WEBSOCKET] Error al interpretar el mensaje:",
+                    error
+                );
+            }
+        };
+
+        plantSocket.onerror = (error) => {
+            console.error("[WEBSOCKET] Error de conexión:", error);
+        };
+
+        plantSocket.onclose = () => {
+            console.warn("[WEBSOCKET] Conexión cerrada");
+
+            connectionStatus.textContent = "Planta desconectada";
+            connectionStatus.style.color = "#ef4444";
+        };
+    }
+
+    function showPlantAlert(alert) {
+        const container = document.getElementById("alertsContainer");
+
+        const emptyMessage = container.querySelector(".empty");
+
+        if (emptyMessage) {
+            emptyMessage.remove();
+        }
+
+        const alertElement = document.createElement("div");
+
+        alertElement.className = "alert";
+
+        if (alert.type === "CRITICAL") {
+            alertElement.classList.add("critical-alert");
+        }
+
+        const title = document.createElement("strong");
+        title.textContent = alert.type === "CRITICAL"
+            ? "ALERTA CRÍTICA"
+            : "ADVERTENCIA";
+
+        const sensor = document.createElement("p");
+        sensor.textContent = `Sensor: ${alert.sensor_id}`;
+
+        const vibration = document.createElement("p");
+        vibration.textContent = `Vibración: ${Number(alert.vibration).toFixed(2)}`;
+
+        const date = document.createElement("small");
+        date.textContent = new Date(alert.timestamp).toLocaleString("es-CO");
+
+        alertElement.append(title, sensor, vibration, date);
+
+        container.prepend(alertElement);
+
+        while (container.children.length > 20) {
+            container.lastElementChild.remove();
+        }
+    }
+
+    function updateSensor(data) {
+        const sensorCard = document.getElementById(data.sensor_id);
+
+        if (!sensorCard) {
+            return;
+        }
+
+        const statusElement = sensorCard.querySelector(".status");
+        const vibrationElement = sensorCard.querySelector(".sensor-value");
+
+        // Actualizar vibración
+        vibrationElement.textContent = Number(data.vibration).toFixed(2);
+
+        // Actualizar estado
+        const statusLabels = {
+            NORMAL: "NORMAL",
+            WARNING: "ADVERTENCIA",
+            CRITICAL: "CRÍTICO"
+        };
+
+        statusElement.textContent = statusLabels[data.status] || data.status;
+
+        // Aplicar colores según el estado
+        statusElement.classList.remove(
+            "muted",
+            "normal",
+            "warning",
+            "critical"
+        );
+
+        sensorCard.classList.remove(
+            "normal",
+            "warning",
+            "critical"
+        );
+
+        const statusClass = data.status.toLowerCase();
+
+        if (["normal", "warning", "critical"].includes(statusClass)) {
+            statusElement.classList.add(statusClass);
+            sensorCard.classList.add(statusClass);
+        }
+
+        // Guardar el estado actual del sensor
+        sensorStates[data.sensor_id] = data.status;
+
+        // Actualizar los indicadores superiores
+        updateStatistics();
+    }
+
+    function updateStatistics() {
+        const states = Object.values(sensorStates);
+
+        const normal = states.filter(
+            status => status === "NORMAL"
+        ).length;
+
+        const warning = states.filter(
+            status => status === "WARNING"
+        ).length;
+
+        const critical = states.filter(
+            status => status === "CRITICAL"
+        ).length;
+
+        document.getElementById("totalSensors").textContent = 10;
+        document.getElementById("normalSensors").textContent = normal;
+        document.getElementById("warningSensors").textContent = warning;
+        document.getElementById("criticalSensors").textContent = critical;
+    }
+
+    connectPlantMonitor();
+
+    let operatorSocket;
+
+    function connectOperatorConsole() {
+        operatorSocket = new WebSocket("ws://localhost:8082/ws/operator");
+
+        operatorSocket.onopen = () => {
+            console.log("[OPERADOR] Consola conectada");
+        };
+
+        operatorSocket.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+
+                console.log("[OPERADOR] Alerta recibida:", data);
+
+                if (data.alert_id && Array.isArray(data.actions)) {
+                    showOperatorAlert(data);
+                }
+
+            } catch (error) {
+                console.error(
+                    "[OPERADOR] Error procesando mensaje:",
+                    error
+                );
+            }
+        };
+
+        operatorSocket.onerror = (error) => {
+            console.error(
+                "[OPERADOR] Error de conexión:",
+                error
+            );
+        };
+
+        operatorSocket.onclose = () => {
+            console.warn("[OPERADOR] Consola desconectada");
+        };
+    }
+
+    function showOperatorAlert(alert) {
+        const container = document.getElementById("operatorConsole");
+
+        // Evitar mostrar dos veces la misma alerta
+        if (document.getElementById(`operator-${alert.alert_id}`)) {
+            return;
+        }
+
+        const emptyMessage = container.querySelector(".empty");
+
+        if (emptyMessage) {
+            emptyMessage.remove();
+        }
+
+        const alertElement = document.createElement("div");
+        alertElement.className = "alert";
+        alertElement.id = `operator-${alert.alert_id}`;
+
+        if (alert.type === "CRITICAL") {
+            alertElement.classList.add("critical-alert");
+        }
+
+        const title = document.createElement("strong");
+        title.textContent = alert.type === "CRITICAL"
+            ? "DECISIÓN URGENTE"
+            : "MANTENIMIENTO REQUERIDO";
+
+        const sensor = document.createElement("p");
+        sensor.textContent = `Sensor: ${alert.sensor_id}`;
+
+        const vibration = document.createElement("p");
+        vibration.textContent =
+            `Vibración: ${Number(alert.vibration).toFixed(2)}`;
+
+        const date = document.createElement("small");
+        date.textContent = new Date(alert.timestamp).toLocaleString("es-CO");
+
+        const actionsContainer = document.createElement("div");
+        actionsContainer.className = "actions";
+
+        const actionLabels = {
+            APAGADO_INMEDIATO: "Apagado inmediato",
+            IGNORAR_10_MINUTOS: "Ignorar 10 minutos",
+            PROGRAMAR_MANTENIMIENTO_AHORA: "Programar mantenimiento",
+            RECONOCER_Y_ESPERAR_24H: "Reconocer y esperar 24 horas"
+        };
+
+        alert.actions.forEach(action => {
+            const button = document.createElement("button");
+
+            button.type = "button";
+            button.textContent = actionLabels[action] || action;
+
+            button.addEventListener("click", () => {
+                sendOperatorDecision(alert, action, alertElement);
+            });
+
+            actionsContainer.appendChild(button);
+        });
+
+        alertElement.append(
+            title,
+            sensor,
+            vibration,
+            date,
+            actionsContainer
+        );
+
+        container.prepend(alertElement);
+    }
+
+    async function sendOperatorDecision(alert, action, alertElement) {
+        const buttons = alertElement.querySelectorAll("button");
+
+        // Deshabilitar botones mientras se envía la decisión
+        buttons.forEach(button => {
+            button.disabled = true;
+        });
+
+        try {
+            const response = await fetch("http://localhost:8083/decide", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    alert_id: alert.alert_id,
+                    sensor_id: alert.sensor_id,
+                    action: action
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+
+            console.log("[DECISIÓN] Enviada:", {
+                alert_id: alert.alert_id,
+                sensor_id: alert.sensor_id,
+                action: action
+            });
+
+            addDecisionToHistory(alert, action);
+
+            // Eliminar la alerta después de enviar la decisión
+            alertElement.remove();
+
+            const container = document.getElementById("operatorConsole");
+
+            if (container.children.length === 0) {
+                const emptyMessage = document.createElement("p");
+                emptyMessage.className = "empty";
+                emptyMessage.textContent = "No hay decisiones pendientes.";
+
+                container.appendChild(emptyMessage);
+            }
+
+        } catch (error) {
+            console.error("[DECISIÓN] Error al enviar:", error);
+
+            // Habilitar nuevamente los botones si ocurre un error
+            buttons.forEach(button => {
+                button.disabled = false;
+            });
+
+            window.alert(
+                "No se pudo enviar la decisión. Revisa la consola."
+            );
+        }
+    }
+
+    function addDecisionToHistory(alert, action) {
+        const container = document.getElementById("decisionHistory");
+
+        const emptyMessage = container.querySelector(".empty");
+
+        if (emptyMessage) {
+            emptyMessage.remove();
+        }
+
+        const item = document.createElement("div");
+        item.className = "alert";
+
+        const title = document.createElement("strong");
+        title.textContent = "DECISIÓN REGISTRADA";
+
+        const sensor = document.createElement("p");
+        sensor.textContent = `Sensor: ${alert.sensor_id}`;
+
+        const decision = document.createElement("p");
+        decision.textContent = `Acción: ${action.replaceAll("_", " ")}`;
+
+        const date = document.createElement("small");
+        date.textContent = new Date().toLocaleString("es-CO");
+
+        item.append(title, sensor, decision, date);
+
+        container.prepend(item);
+
+        // Mantener únicamente las últimas 20 decisiones
+        while (container.children.length > 20) {
+            container.lastElementChild.remove();
+        }
+    }
+
+    connectOperatorConsole();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "alert_id": "alert-001",
+  "sensor_id": "sensor_A",
+  "type": "CRITICAL",
+  "vibration": 95,
+  "timestamp": "2026-11-10T18:00:00Z"
+}

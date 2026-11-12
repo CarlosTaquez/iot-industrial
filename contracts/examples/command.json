@@ -1,0 +1,6 @@
+{
+  "alert_id": "alert-001",
+  "sensor_id": "sensor_A",
+  "chosen_action": "APAGADO_INMEDIATO",
+  "timestamp": "2026-11-10T18:00:01Z"
+}

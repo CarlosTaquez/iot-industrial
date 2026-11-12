@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: maintenance_worker
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:iot}
+    password: ${RABBITMQ_PASSWORD:iot_dev_password}
+
+  main:
+    web-application-type: none
+
+logging:
+  level:
+    org.springframework.amqp.rabbit: DEBUG

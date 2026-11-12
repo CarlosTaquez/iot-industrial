@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: actuator_worker
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:iot}
+    password: ${RABBITMQ_PASSWORD:iot_dev_password}
+
+  main:
+    web-application-type: none

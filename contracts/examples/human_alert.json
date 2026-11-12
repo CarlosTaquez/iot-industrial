@@ -1,0 +1,9 @@
+{
+  "alert_id": "alert-001",
+  "sensor_id": "sensor_A",
+  "type": "CRITICAL",
+  "options": [
+    "APAGADO_INMEDIATO",
+    "IGNORAR_10_MINUTOS"
+  ]
+}

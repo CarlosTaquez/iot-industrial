@@ -1,0 +1,22 @@
+
+spring:
+  application:
+    name: alert_router
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+    consumer:
+      group-id: alert-router-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:iot}
+    password: ${RABBITMQ_PASSWORD:iot_dev_password}
+
+server:
+  port: ${SERVER_PORT:0}
