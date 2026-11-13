@@ -264,7 +264,7 @@
 
         <div>
             <section class="panel">
-                <h2>Alertas en tiempo real</h2>
+                <h2>Alertas recientes</h2>
                 <div id="alertsContainer">
                     <p class="empty">
                         Esperando alertas del sistema...
@@ -295,6 +295,9 @@
 </main>
 
 <script>
+    const HISTORY_API_BASE = "http://localhost:8090";
+    const displayedPlantAlertIds = new Set();
+
     const sensorGrid = document.getElementById("sensorGrid");
 
     const sensors = "ABCDEFGHIJ".split("");
@@ -376,6 +379,15 @@
 
     function showPlantAlert(alert) {
         const container = document.getElementById("alertsContainer");
+        const alertId = alert.alert_id || alert.alertId;
+
+        if (alertId && displayedPlantAlertIds.has(alertId)) {
+            return;
+        }
+
+        if (alertId) {
+            displayedPlantAlertIds.add(alertId);
+        }
 
         const emptyMessage = container.querySelector(".empty");
 
@@ -386,6 +398,9 @@
         const alertElement = document.createElement("div");
 
         alertElement.className = "alert";
+        if (alertId) {
+            alertElement.dataset.alertId = alertId;
+        }
 
         if (alert.type === "CRITICAL") {
             alertElement.classList.add("critical-alert");
@@ -403,7 +418,9 @@
         vibration.textContent = `Vibración: ${Number(alert.vibration).toFixed(2)}`;
 
         const date = document.createElement("small");
-        date.textContent = new Date(alert.timestamp).toLocaleString("es-CO");
+        date.textContent = new Date(
+            alert.timestamp || alert.occurredAt || alert.createdAt
+        ).toLocaleString("es-CO");
 
         alertElement.append(title, sensor, vibration, date);
 
@@ -412,6 +429,48 @@
         while (container.children.length > 20) {
             container.lastElementChild.remove();
         }
+    }
+
+    async function loadPersistentHistory() {
+        const requests = [
+            {
+                url: `${HISTORY_API_BASE}/history/alerts?limit=20`,
+                onItems: (alerts) => alerts.slice().reverse().forEach(alert => {
+                    showPlantAlert({
+                        alert_id: alert.alertId,
+                        type: alert.severity,
+                        sensor_id: alert.sensorId,
+                        vibration: alert.vibrationValue,
+                        timestamp: alert.occurredAt || alert.createdAt
+                    });
+                })
+            },
+            {
+                url: `${HISTORY_API_BASE}/history/decisions?limit=20`,
+                onItems: (decisions) => decisions.slice().reverse().forEach(decision => {
+                    addDecisionToHistory(
+                        { alert_id: decision.alertId, sensor_id: decision.sensorId },
+                        decision.action,
+                        decision.decidedAt,
+                        decision.id
+                    );
+                })
+            }
+        ];
+
+        const results = await Promise.allSettled(requests.map(async ({ url, onItems }) => {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Error HTTP ${response.status} al cargar ${url}`);
+            }
+            onItems(await response.json());
+        }));
+
+        results.forEach((result) => {
+            if (result.status === "rejected") {
+                console.error("[HISTORIAL] No se pudo cargar:", result.reason);
+            }
+        });
     }
 
     function updateSensor(data) {
@@ -485,6 +544,7 @@
         document.getElementById("criticalSensors").textContent = critical;
     }
 
+    loadPersistentHistory();
     connectPlantMonitor();
 
     let operatorSocket;
@@ -657,8 +717,12 @@
         }
     }
 
-    function addDecisionToHistory(alert, action) {
+    function addDecisionToHistory(alert, action, decidedAt = new Date().toISOString(), decisionId = null) {
         const container = document.getElementById("decisionHistory");
+
+        if (decisionId !== null && document.getElementById(`decision-${decisionId}`)) {
+            return;
+        }
 
         const emptyMessage = container.querySelector(".empty");
 
@@ -668,6 +732,9 @@
 
         const item = document.createElement("div");
         item.className = "alert";
+        if (decisionId !== null) {
+            item.id = `decision-${decisionId}`;
+        }
 
         const title = document.createElement("strong");
         title.textContent = "DECISIÓN REGISTRADA";
@@ -679,7 +746,7 @@
         decision.textContent = `Acción: ${action.replaceAll("_", " ")}`;
 
         const date = document.createElement("small");
-        date.textContent = new Date().toLocaleString("es-CO");
+        date.textContent = new Date(decidedAt).toLocaleString("es-CO");
 
         item.append(title, sensor, decision, date);
 
