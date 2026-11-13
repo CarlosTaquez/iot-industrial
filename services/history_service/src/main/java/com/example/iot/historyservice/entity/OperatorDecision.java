@@ -13,6 +13,9 @@ public class OperatorDecision {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "alert_id")
+    private String alertId;
+
     @Column(name = "sensor_id")
     private String sensorId;
 
@@ -31,14 +34,17 @@ public class OperatorDecision {
 
     protected OperatorDecision() {}
 
-    public OperatorDecision(String sensorId, String action, String routingKey, String payload) {
+    public OperatorDecision(String sensorId, String action, String routingKey, String payload,
+                            String alertId) {
         this.sensorId = sensorId;
         this.action = action;
         this.routingKey = routingKey;
         this.payload = payload;
+        this.alertId = alertId;
     }
 
     public Long getId() { return id; }
+    public String getAlertId() { return alertId; }
     public String getSensorId() { return sensorId; }
     public String getAction() { return action; }
     public String getRoutingKey() { return routingKey; }

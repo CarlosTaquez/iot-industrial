@@ -32,8 +32,9 @@ public class HistoryRabbitConsumer {
             JsonNode node = mapper.readTree(body);
             String action = JsonFields.text(node, "action");
             String sensorId = JsonFields.text(node, "sensor_id", "sensorId", "sensor");
+            String alertId = JsonFields.text(node, "alert_id", "alertId");
             decisions.save(new OperatorDecision(
-                    sensorId, action != null ? action : "UNKNOWN", routingKey, body));
+                    sensorId, action != null ? action : "UNKNOWN", routingKey, body, alertId));
         } catch (Exception e) {
             log.error("Error guardando decision: {}", body, e);
         }
