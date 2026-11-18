@@ -15,6 +15,22 @@ docker compose ps
 
 RabbitMQ Management: http://localhost:15672 (credenciales en `.env`). Kafka: localhost:9092 desde Windows; kafka:19092 desde otros contenedores. RabbitMQ: localhost:5672 desde Windows; rabbitmq:5672 desde otros contenedores.
 
+## Ejecutar history_service con Docker Compose
+
+Con `.env` creado y los temas Kafka existentes, inicia Kafka, RabbitMQ, PostgreSQL e `history_service` usando los tres archivos Compose:
+
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.postgres.yml -f docker-compose.history.yml up -d --build
+```
+
+Para revisar la configuración combinada antes de iniciar contenedores:
+
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.postgres.yml -f docker-compose.history.yml config
+```
+
+El servicio queda disponible en `http://localhost:8090`. `depends_on` ordena el inicio, pero no espera a que las dependencias estén listas; `history_service` tiene política de reinicio `unless-stopped`. Para ejecutar Java localmente, los valores predeterminados de conexión siguen apuntando a `localhost`.
+
 ## Crear los topics (después de arrancar Kafka)
 ```powershell
 docker compose exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:19092 --create --if-not-exists --topic sensor_data --partitions 3 --replication-factor 1

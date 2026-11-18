@@ -1,4 +1,17 @@
 .env
+.env.*
+!.env.example
+!.env.*.example
+.aws/
+*.pem
+*.key
+*.p12
+*.pfx
+*.ppk
+id_rsa
+id_ed25519
+id_ecdsa
+id_dsa
 **/target/
 .idea/
 .vscode/
