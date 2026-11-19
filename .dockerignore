@@ -10,3 +10,11 @@
 **/*.iml
 **/*.log
 info.txt
+dashboard/
+database/
+docs/
+infra/
+contracts/
+.github/
+docker-compose*.yml
+README.md

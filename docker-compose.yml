@@ -16,20 +16,259 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      # En el entorno local, deja que los productores creen los tópicos del proyecto.
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
     volumes:
       - kafka_data:/var/lib/kafka/data
+
   rabbitmq:
-    image: rabbitmq:3.13-management
+    build:
+      context: ./infra/rabbitmq
+    image: iot-industrial-rabbitmq:local
     hostname: rabbitmq
     ports:
       - "5672:5672"
       - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?RABBITMQ_USER must be set in .env}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set in .env}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+
+  postgres:
+    image: postgres:16
+    container_name: iot_postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-iot_history}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER must be set in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./database/migrations:/migrations:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  sensor_producer:
+    build:
+      context: .
+      dockerfile: services/sensor_producer/Dockerfile
+    image: iot-industrial-sensor_producer:local
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+      SERVER_PORT: 0
+    depends_on:
+      - kafka
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 384M
+    restart: unless-stopped
+
+  alert_detector:
+    build:
+      context: .
+      dockerfile: services/alert_detector/Dockerfile
+    image: iot-industrial-alert_detector:local
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+      SERVER_PORT: 0
+    depends_on:
+      - kafka
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 384M
+    restart: unless-stopped
+
+  alert_router:
+    build:
+      context: .
+      dockerfile: services/alert_router/Dockerfile
+    image: iot-industrial-alert_router:local
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:?RABBITMQ_USER must be set in .env}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set in .env}
+      SERVER_PORT: 0
+    depends_on:
+      - kafka
+      - rabbitmq
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 384M
+    restart: unless-stopped
+
+  plant_monitor_backend:
+    build:
+      context: .
+      dockerfile: services/plant_monitor_backend/Dockerfile
+    image: iot-industrial-plant_monitor_backend:local
+    ports:
+      - "8081:8081"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+      SERVER_PORT: 8081
+    depends_on:
+      - kafka
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 384M
+    restart: unless-stopped
+
+  operator_console_backend:
+    build:
+      context: .
+      dockerfile: services/operator_console_backend/Dockerfile
+    image: iot-industrial-operator_console_backend:local
+    ports:
+      - "8082:8082"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:?RABBITMQ_USER must be set in .env}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set in .env}
+      SERVER_PORT: 8082
+    depends_on:
+      - kafka
+      - rabbitmq
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 384M
+    restart: unless-stopped
+
+  action_dispatcher:
+    build:
+      context: .
+      dockerfile: services/action_dispatcher/Dockerfile
+    image: iot-industrial-action_dispatcher:local
+    ports:
+      - "8083:8083"
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:?RABBITMQ_USER must be set in .env}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set in .env}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-iot_history}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:?POSTGRES_USER must be set in .env}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+      SERVER_PORT: 8083
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 384M
+    restart: unless-stopped
+
+  actuator_worker:
+    build:
+      context: .
+      dockerfile: services/actuator_worker/Dockerfile
+    image: iot-industrial-actuator_worker:local
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:?RABBITMQ_USER must be set in .env}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set in .env}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-iot_history}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:?POSTGRES_USER must be set in .env}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      action_dispatcher:
+        condition: service_started
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 384M
+    restart: unless-stopped
+
+  maintenance_worker:
+    build:
+      context: .
+      dockerfile: services/maintenance_worker/Dockerfile
+    image: iot-industrial-maintenance_worker:local
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:?RABBITMQ_USER must be set in .env}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set in .env}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-iot_history}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:?POSTGRES_USER must be set in .env}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      action_dispatcher:
+        condition: service_started
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 384M
+    restart: unless-stopped
+
+  history-service:
+    build:
+      context: .
+      dockerfile: services/history_service/Dockerfile
+    image: iot-industrial-history-service:local
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-iot_history}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER must be set in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-iot_history}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:?RABBITMQ_USER must be set in .env}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set in .env}
+    ports:
+      - "8090:8090"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+    restart: unless-stopped
+
 volumes:
   kafka_data:
   rabbitmq_data:
+  pgdata:

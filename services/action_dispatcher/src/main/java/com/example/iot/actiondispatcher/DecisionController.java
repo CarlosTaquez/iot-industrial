@@ -10,10 +10,10 @@ import java.util.Map;
 @RequestMapping("/decide")
 public class DecisionController {
 
-    private final DecisionPublisher decisionPublisher;
+    private final DecisionApplicationService decisionApplicationService;
 
-    public DecisionController(DecisionPublisher decisionPublisher) {
-        this.decisionPublisher = decisionPublisher;
+    public DecisionController(DecisionApplicationService decisionApplicationService) {
+        this.decisionApplicationService = decisionApplicationService;
     }
 
     @PostMapping
@@ -37,17 +37,23 @@ public class DecisionController {
 
         try {
 
-            decisionPublisher.publishDecision(decision);
+            MaintenanceDecision domainDecision = decisionApplicationService.decide(decision);
 
             System.out.println(
                     "[HTTP] Decision recibida para sensor: "
-                            + decision.getSensor_id()
+                            + domainDecision.sensorId()
             );
 
             return ResponseEntity.accepted().body(
                     Map.of(
                             "status", "ACCEPTED",
-                            "message", "Decision enviada a RabbitMQ"
+                            "message", "Decision guardada y encolada para despacho",
+                            "decision_id", domainDecision.decisionId(),
+                            "alert_id", domainDecision.alertId(),
+                            "sensor_id", domainDecision.sensorId(),
+                            "action", domainDecision.action().name(),
+                            "routing_key", domainDecision.action().routingKey(),
+                            "decision_status", domainDecision.status().name()
                     )
             );
 
@@ -60,6 +66,9 @@ public class DecisionController {
                     )
             );
 
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                    Map.of("status", "ERROR", "message", e.getMessage()));
         } catch (Exception e) {
 
             System.err.println(

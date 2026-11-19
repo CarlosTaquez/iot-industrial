@@ -1,0 +1,45 @@
+package com.example.iot.alertdetector;
+
+import java.util.ArrayDeque;
+import java.util.List;
+
+/** Aggregate root that owns a sensor's rolling vibration window and its invariants. */
+public final class SensorVibrationWindow {
+    private static final int CAPACITY = 3;
+    private final SensorId sensorId;
+    private final ArrayDeque<Double> readings = new ArrayDeque<>();
+    private SensorState state = new NormalState();
+    private boolean warningRaised;
+
+    public SensorVibrationWindow(String sensorId) {
+        this.sensorId = new SensorId(sensorId);
+    }
+
+    public SensorStatus registerReading(double vibration, CriticityStrategy strategy) {
+        if (!Double.isFinite(vibration) || vibration < 0 || vibration > 100) {
+            throw new IllegalArgumentException("La vibración debe estar entre 0 y 100");
+        }
+        if (strategy == null) throw new IllegalArgumentException("La estrategia es obligatoria");
+        readings.addLast(vibration);
+        if (readings.size() > CAPACITY) readings.removeFirst();
+        transitionTo(strategy.evaluate(vibration, List.copyOf(readings)));
+        return state.status();
+    }
+
+    public boolean warningThresholdReached() {
+        return state.status() == SensorStatus.WARNING && !warningRaised;
+    }
+
+    public void acknowledgeWarning() {
+        if (state.status() != SensorStatus.WARNING) throw new IllegalStateException("No hay advertencia pendiente");
+        warningRaised = true;
+    }
+
+    public String sensorId() { return sensorId.value(); }
+
+    private void transitionTo(SensorStatus next) {
+        SensorStatus previous = state.status();
+        state = state.transitionTo(next);
+        if (previous != next && (next == SensorStatus.WARNING || next == SensorStatus.NORMAL)) warningRaised = false;
+    }
+}

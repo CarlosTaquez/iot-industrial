@@ -8,9 +8,6 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 @Component
 public class AlertRouter {
@@ -32,45 +29,14 @@ public class AlertRouter {
         try {
             JsonNode alert = objectMapper.readTree(message);
 
-            String alertId = alert.get("alert_id").asText();
-            String sensorId = alert.get("sensor_id").asText();
-            String type = alert.get("type").asText();
+            IndustrialAlert domainAlert = new IndustrialAlert(
+                    alert.path("alert_id").asText(),
+                    alert.path("sensor_id").asText(),
+                    AlertSeverity.from(alert.path("type").asText()),
+                    alert.path("vibration").asDouble(Double.NaN),
+                    alert.path("timestamp").asText());
 
-            List<String> actions;
-
-            if ("CRITICAL".equals(type)) {
-
-                actions = List.of(
-                        "APAGADO_INMEDIATO",
-                        "IGNORAR_10_MINUTOS"
-                );
-
-            } else if ("WARNING".equals(type)) {
-
-                actions = List.of(
-                        "PROGRAMAR_MANTENIMIENTO_AHORA",
-                        "RECONOCER_Y_ESPERAR_24H"
-                );
-
-            } else {
-                System.err.println(
-                        "Tipo de alerta desconocido: " + type
-                );
-                return;
-            }
-
-            Map<String, Object> routedAlert =
-                    new LinkedHashMap<>();
-
-            routedAlert.put("alert_id", alertId);
-            routedAlert.put("sensor_id", sensorId);
-            routedAlert.put("type", type);
-            routedAlert.put("vibration",
-                    alert.get("vibration").asDouble());
-            routedAlert.put("timestamp",
-                    alert.get("timestamp").asText());
-            routedAlert.put("actions", actions);
-
+            HumanAlertRecord routedAlert = HumanAlertRecord.from(domainAlert);
             String json = objectMapper.writeValueAsString(routedAlert);
 
             rabbitTemplate.convertAndSend(
@@ -80,8 +46,8 @@ public class AlertRouter {
             );
 
             System.out.println(
-                    "[RABBITMQ] Alerta " + type +
-                    " enviada: " + sensorId
+                    "[RABBITMQ] Alerta " + domainAlert.severity() +
+                    " enviada: " + domainAlert.sensorId()
             );
 
         } catch (Exception e) {

@@ -11,6 +11,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class HistoryRabbitConsumer {
@@ -26,17 +27,24 @@ public class HistoryRabbitConsumer {
     }
 
     @RabbitListener(queues = RabbitConfig.HISTORY_QUEUE)
+    @Transactional
     public void onDecision(String body,
                            @Header(AmqpHeaders.RECEIVED_ROUTING_KEY) String routingKey) {
         try {
             JsonNode node = mapper.readTree(body);
             String action = JsonFields.text(node, "action");
+            String decisionId = JsonFields.text(node, "decision_id", "decisionId");
             String sensorId = JsonFields.text(node, "sensor_id", "sensorId", "sensor");
             String alertId = JsonFields.text(node, "alert_id", "alertId");
+            if (decisionId == null || sensorId == null || action == null) {
+                throw new IllegalArgumentException("decision_id, sensor_id y action son obligatorios");
+            }
+            if (decisions.existsByDecisionId(decisionId)) return;
             decisions.save(new OperatorDecision(
-                    sensorId, action != null ? action : "UNKNOWN", routingKey, body, alertId));
+                    decisionId, sensorId, action, routingKey, body, alertId));
         } catch (Exception e) {
             log.error("Error guardando decision: {}", body, e);
+            throw new IllegalStateException("No se pudo persistir la auditoría de decisión", e);
         }
     }
 }

@@ -77,11 +77,15 @@ public class HistoryKafkaConsumer {
             String sensorId = JsonFields.text(node, "sensor_id", "sensorId", "sensor");
             Double value = JsonFields.number(node, "vibration", "vibration_value", "vibrationValue", "value");
             String alertId = JsonFields.text(node, "alert_id", "alertId");
+            if (sensorId == null || alertId == null || alertId.isBlank()) {
+                log.warn("Alerta ignorada, faltan identificadores: {}", json);
+                return;
+            }
             if (alertId != null && alerts.existsByAlertId(alertId)) {
                 return;
             }
             Instant occurredAt = parseInstant(JsonFields.text(node, "timestamp"));
-            alerts.save(new Alert(sensorId != null ? sensorId : "UNKNOWN", severity, value, json,
+            alerts.save(new Alert(sensorId, severity, value, json,
                     alertId, occurredAt));
         } catch (Exception e) {
             log.error("Error guardando alerta {}: {}", severity, json, e);

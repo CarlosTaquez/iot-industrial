@@ -1,9 +1,6 @@
 
 package com.example.iot.sensorproducer;
 
-import java.time.Instant;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.springframework.kafka.core.KafkaTemplate;
@@ -34,12 +31,9 @@ public class SensorSimulator {
 
             double vibration = generateVibration();
 
-            Map<String, Object> data = new LinkedHashMap<>();
-            data.put("sensor_id", sensorId);
-            data.put("vibration", vibration);
-            data.put("timestamp", Instant.now().toString());
-
-            kafkaTemplate.send(TOPIC, sensorId, data);
+            VibrationReadingRecord reading = new VibrationReadingRecord(
+                    sensorId, vibration, java.time.Instant.now().toString());
+            kafkaTemplate.send(TOPIC, sensorId, reading);
 
             System.out.println(
                 "[KAFKA] " + sensorId +

@@ -12,6 +12,7 @@ public class RabbitConfig {
 
     public static final String EXCHANGE_NAME = "operator_decisions";
     public static final String HISTORY_QUEUE = "history_decisions_queue";
+    public static final String AUDIT_ROUTING_KEY = "audit";
 
     @Bean
     public DirectExchange operatorDecisionsExchange() {
@@ -24,12 +25,7 @@ public class RabbitConfig {
     }
 
     @Bean
-    public Binding historyActuatorBinding(Queue historyDecisionsQueue, DirectExchange operatorDecisionsExchange) {
-        return BindingBuilder.bind(historyDecisionsQueue).to(operatorDecisionsExchange).with("actuator");
-    }
-
-    @Bean
-    public Binding historyMaintenanceBinding(Queue historyDecisionsQueue, DirectExchange operatorDecisionsExchange) {
-        return BindingBuilder.bind(historyDecisionsQueue).to(operatorDecisionsExchange).with("maintenance");
+    public Binding historyAuditBinding(Queue historyDecisionsQueue, DirectExchange operatorDecisionsExchange) {
+        return BindingBuilder.bind(historyDecisionsQueue).to(operatorDecisionsExchange).with(AUDIT_ROUTING_KEY);
     }
 }
