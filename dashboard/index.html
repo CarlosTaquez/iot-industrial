@@ -16,11 +16,36 @@
     @media(max-width:850px){.sidebar{width:65px;padding:16px 7px}.brand{padding:4px 7px 23px}.brand>div:last-child,.plant-select,.nav-label,.nav button .nav-text,.nav-badge,.system-card,.profile>div:not(.avatar){display:none}.nav button{justify-content:center;padding:12px 6px}.nav-icon{font-size:16px}.profile{justify-content:center;padding-top:14px}.main{margin-left:65px}.dashboard-grid,.below-grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.content{padding:20px 16px}.map{height:310px}}
     @media(max-width:560px){.topbar{padding:0 14px;height:50px}.content{padding:17px 12px}.page-head{align-items:flex-start;flex-direction:column}.page-head h1{font-size:25px}.actions{width:100%}.actions .btn{flex:1}.stats{gap:8px}.kpi{padding:12px;min-height:98px}.kpi strong{font-size:23px}.dashboard-grid{grid-template-columns:minmax(0,1fr)}.map{height:270px}.equipment{width:83px}.equip-name{font-size:8px}.equip-id{font-size:7px}.panel{padding:13px}.clock{display:none}.secondary-grid{grid-template-columns:1fr}.footer{gap:9px;flex-direction:column}.map-legend{gap:8px}.sync{margin-left:0}}
     @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+    .topbar-left{display:flex;align-items:center;gap:10px;min-width:0;flex:1}.crumb{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mobile-menu{display:none;place-items:center;flex:0 0 38px;width:38px;height:38px;border:1px solid var(--line);border-radius:7px;background:#111b29;color:var(--text);font-size:18px}.sidebar-backdrop{display:none}
+    @media(max-width:900px){
+      .sidebar{width:260px;inset:0 auto 0 0;transform:translateX(-105%);transition:transform .22s ease;overflow-y:auto;box-shadow:18px 0 40px #0008;z-index:30}
+      .sidebar.open{transform:translateX(0)}
+      .brand>div:last-child,.plant-select,.nav-label,.nav button .nav-text,.nav-badge,.system-card,.profile>div:not(.avatar){display:block}
+      .nav-badge{display:inline-block}.nav button{justify-content:flex-start;padding:10px 11px}.profile{justify-content:flex-start}
+      .main{margin-left:0;min-width:0}.topbar{height:58px;padding:0 20px;justify-content:flex-start;gap:10px}.mobile-menu{display:grid}.top-right{margin-left:auto;gap:12px}
+      .content{padding:22px 20px 26px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-grid,.below-grid{grid-template-columns:minmax(0,1fr)}
+      .dashboard-grid,.below-grid{gap:12px}.map{height:320px}.equipment{width:76px}.equip-name{white-space:normal;overflow-wrap:anywhere;line-height:1.2}
+      .sidebar-backdrop:not([hidden]){display:block;position:fixed;inset:0;z-index:25;border:0;background:#03060bc9;backdrop-filter:blur(2px)}body.nav-open{overflow:hidden}
+    }
+    @media(max-width:560px){
+      .topbar{height:54px;padding:0 12px;gap:8px}.topbar-left{gap:8px}.mobile-menu{width:36px;height:36px;flex-basis:36px}.crumb{font-size:11px}.top-right{gap:8px}.clock{display:none}.top-right .avatar{width:30px;height:30px}
+      .content{padding:16px 12px 22px}.page-head{align-items:flex-start;flex-direction:column;gap:13px;margin-bottom:16px}.page-head h1{font-size:25px}.page-head p{font-size:11px}
+      .actions{display:grid;width:100%;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.actions .btn{min-width:0;min-height:40px;padding:8px 7px;font-size:10px;line-height:1.25}
+      .stats{gap:8px;margin-bottom:10px}.kpi{min-height:96px;padding:11px}.kpi-head{font-size:10px;gap:5px}.kpi strong{font-size:23px;margin-top:6px}.kpi small{font-size:9px}
+      .panel{padding:13px}.panel-head{gap:8px;margin-bottom:12px}.panel-head h2{font-size:12px}.panel-head p{font-size:9px}.tag{font-size:8px;white-space:nowrap}
+      .map{height:320px}.equipment{width:58px}.equip-name{font-size:7px}.equip-id{font-size:6px}.equip-dot{width:11px;height:11px}
+      .map-legend{gap:7px}.legend-item{font-size:8px}.sync{width:100%;margin-left:0}.trend-wrap{height:205px}.trend-wrap svg{overflow:hidden;display:block}
+      .alerts{max-height:none}.alert-actions .btn{flex:1 1 115px;min-height:36px;font-size:9px}.activity{grid-template-columns:18px minmax(0,1fr) auto;gap:6px}.activity p{font-size:9px}.activity small{font-size:8px}
+      .secondary-grid{grid-template-columns:minmax(0,1fr)}.record{overflow-wrap:anywhere}.footer{gap:8px;flex-direction:column;font-size:8px}.toast-region{left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom))}.toast{max-width:none}
+    }
+    @media(max-width:360px){.content{padding-inline:9px}.topbar{padding-inline:9px}.live{font-size:8px}.page-head h1{font-size:23px}.kpi{padding:9px}.kpi-head{font-size:9px}.map{height:300px}.equipment{width:52px}.equip-name{font-size:6.5px}.equip-id{font-size:5.5px}.map-legend{column-gap:6px}}
+    @media(prefers-reduced-motion:reduce){.sidebar,.live i,.equipment.critical .equip-dot{animation:none!important;transition:none!important}}
+    @media(min-width:901px){.sidebar-backdrop,.mobile-menu{display:none!important}}
   </style>
 </head>
 <body>
 <div class="app">
-  <aside class="sidebar" aria-label="Navegación principal">
+  <aside class="sidebar" id="mainNav" aria-label="Navegación principal">
     <a class="brand" href="#overview" aria-label="FORGEOPS inicio"><span class="brand-mark">F</span><div><strong>FORGEOPS</strong><small>INDUSTRIAL INTELLIGENCE</small></div></a>
     <label class="plant-select"><small>PLANTA ACTIVA</small><select aria-label="Planta activa"><option>Planta Norte · Línea 01</option></select></label>
     <div class="nav-label">OPERACIONES</div>
@@ -40,8 +65,9 @@
       <div class="profile"><div class="avatar">JM</div><div><strong>Juan Manuel</strong><small>Turno A · Operador</small></div></div>
     </div>
   </aside>
+  <button class="sidebar-backdrop" id="navBackdrop" type="button" aria-label="Cerrar navegación" hidden></button>
   <main class="main">
-    <header class="topbar"><div class="crumb">Operaciones&nbsp; / &nbsp;<b id="breadcrumb">Vista general</b></div><div class="top-right"><span class="live" id="liveStatus"><i></i>EN VIVO</span><time class="clock" id="clock">--:--:--</time><button class="bell" aria-label="Notificaciones" title="Notificaciones">♧</button><div class="avatar" aria-label="Juan Manuel">JM</div></div></header>
+    <header class="topbar"><div class="topbar-left"><button class="mobile-menu" id="navToggle" type="button" aria-label="Abrir navegación" aria-controls="mainNav" aria-expanded="false"><span aria-hidden="true">☰</span></button><div class="crumb">Operaciones&nbsp; / &nbsp;<b id="breadcrumb">Vista general</b></div></div><div class="top-right"><span class="live" id="liveStatus"><i></i>EN VIVO</span><time class="clock" id="clock">--:--:--</time><button class="bell" aria-label="Notificaciones" title="Notificaciones">♧</button><div class="avatar" aria-label="Juan Manuel">JM</div></div></header>
     <div class="content">
       <section id="page-overview" class="page active" aria-labelledby="pageTitle">
         <div class="page-head"><div><div class="eyebrow" id="shiftLabel">19 NOV 2026 · TURNO A</div><h1 id="pageTitle">Centro de operaciones<span>.</span></h1><p>Telemetría, alertas y estado de la planta en tiempo real.</p></div><div class="actions"><button class="btn primary" id="simulateBtn">＋ Simular lectura</button><button class="btn" id="exportBtn">↓ Exportar reporte</button></div></div>
@@ -133,11 +159,14 @@
   $('simulateBtn').addEventListener('click',async e=>{const b=e.currentTarget;b.disabled=true;b.textContent='Enviando…';try{await request(`${API.producer}/simulate`,{method:'POST'});toast('Lectura de prueba enviada al flujo de telemetría.');addActivity('⌁','Lectura manual de simulación enviada.')}catch(err){toast(`No se pudo simular: ${err.message}`,'error')}finally{b.disabled=false;b.textContent='＋ Simular lectura'}});
   $('exportBtn').addEventListener('click',()=>{const rows=[['alert_id','sensor_id','equipo','severidad','vibracion_mm_s','timestamp','estado','decision'],...state.sessionAlerts.map(a=>[a.alert_id||a.alertId,a.sensor_id||a.sensorId,assetName(a.sensor_id||a.sensorId),a.type,a.vibration,a.timestamp||'',a.sessionStatus,a.sessionAction||''])];const csv=rows.map(row=>row.map(v=>`"${String(v??'').replaceAll('"','""')}"`).join(',')).join('\r\n');const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`forgeops-alertas-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);toast('Reporte CSV de las alertas de esta sesión descargado.')});
   $('rangeSelect').addEventListener('change',renderChart);$('zoomIn').addEventListener('click',()=>{state.zoom=Math.min(1.4,state.zoom+.1);renderMap()});$('zoomOut').addEventListener('click',()=>{state.zoom=Math.max(.7,state.zoom-.1);renderMap()});
-  document.querySelectorAll('.nav button').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b===btn));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===`page-${btn.dataset.page}`));$('breadcrumb').textContent=btn.querySelector('.nav-text').textContent;if(btn.dataset.page==='alerts')renderAlertDirectory();if(btn.dataset.page==='architecture')checkServices()}));
+  const sidebar=$('mainNav'),navToggle=$('navToggle'),navBackdrop=$('navBackdrop');
+  function setNavigationOpen(open){sidebar.classList.toggle('open',open);document.body.classList.toggle('nav-open',open);navToggle.setAttribute('aria-expanded',String(open));navToggle.setAttribute('aria-label',open?'Cerrar navegación':'Abrir navegación');navBackdrop.hidden=!open}
+  navToggle.addEventListener('click',()=>setNavigationOpen(!sidebar.classList.contains('open')));navBackdrop.addEventListener('click',()=>setNavigationOpen(false));document.addEventListener('keydown',e=>{if(e.key==='Escape')setNavigationOpen(false)});
+  document.querySelectorAll('.nav button').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b===btn));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===`page-${btn.dataset.page}`));$('breadcrumb').textContent=btn.querySelector('.nav-text').textContent;if(btn.dataset.page==='alerts')renderAlertDirectory();if(btn.dataset.page==='architecture')checkServices();setNavigationOpen(false)}));
   async function checkServices(){const statuses=await Promise.all(Object.entries({Planta:`${API.plant}/actuator/health`,Operador:`${API.operator}/actuator/health`,Decisiones:`${API.dispatcher}/actuator/health`,Historial:`${API.history}/actuator/health`}).map(async([name,url])=>{try{await request(url);return `<span class="positive">●</span> ${name} · operativo`}catch{return `<span class="critical-text">●</span> ${name} · sin conexión`}}));$('serviceStatus').innerHTML=statuses.map(s=>`<div class="record">${s}</div>`).join('')}
   function tick(){const now=new Date();$('clock').textContent=fmtTime(now);$('shiftLabel').textContent=`${new Intl.DateTimeFormat('es-CO',{day:'2-digit',month:'short',year:'numeric'}).format(now).toUpperCase()} · TURNO A`;if(state.lastSync)$('syncLabel').textContent=`Última sincronización hace ${Math.floor((Date.now()-state.lastSync)/1000)} s`}
   $('chartWrap').addEventListener('mousemove',e=>{const tip=$('chartTip'),wrap=$('chartWrap'),range=Number($('rangeSelect').value||20);tip.style.display='block';tip.style.left=`${Math.min(e.offsetX+12,wrap.clientWidth-165)}px`;tip.style.top=`${Math.max(0,e.offsetY-28)}px`;const ratio=Math.max(0,Math.min(1,(e.offsetX-38)/Math.max(1,wrap.clientWidth-50))),targetValue=Math.max(0,Math.min(100,100*(1-(e.offsetY-12)/193)));const points=ids.map(id=>{const history=(state.sensors[id]?.history||[]).slice(-range);if(!history.length)return null;const sample=history[Math.round(ratio*(history.length-1))];return{id,sample,distance:Math.abs(sample.vibration-targetValue)}}).filter(Boolean).sort((a,b)=>a.distance-b.distance);const nearest=points[0];tip.textContent=nearest?`${nearest.id} · ${nearest.sample.vibration.toFixed(1)} mm/s · ${nearest.sample.status} · ${fmtTime(nearest.sample.time)}`:'Esperando telemetría'});$('chartWrap').addEventListener('mouseleave',()=>$('chartTip').style.display='none');
-  window.addEventListener('resize',renderChart);setInterval(tick,1000);setInterval(renderMap,5000);connectSocket('plant');connectSocket('operator');loadInitial();renderAll();tick();
+  window.addEventListener('resize',()=>{if(window.innerWidth>900)setNavigationOpen(false);renderChart()});setInterval(tick,1000);setInterval(renderMap,5000);connectSocket('plant');connectSocket('operator');loadInitial();renderAll();tick();
 })();
 </script>
 </body>
