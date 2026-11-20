@@ -40,8 +40,9 @@ public class AlertDetector {
             kafkaTemplate.send("sensor_status", sensorId,
                     new SensorStatusRecord(sensorId, vibration, status.name(), Instant.now().toString()));
 
-            if (status == SensorStatus.CRITICAL) {
+            if (window.criticalThresholdReached()) {
                 publishAlert(sensorId, vibration, status, "alerts_critical");
+                window.acknowledgeCritical();
             } else if (window.warningThresholdReached()) {
                 publishAlert(sensorId, vibration, status, "alerts_warning");
                 window.acknowledgeWarning();

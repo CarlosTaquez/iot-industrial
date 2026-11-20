@@ -12,6 +12,10 @@ docker compose up -d --build
 ```
 
 El unico archivo `docker-compose.yml` configura Kafka, RabbitMQ, PostgreSQL y todos los microservicios. Compose publica Kafka en `localhost:9092`, RabbitMQ en `localhost:5672` y su consola en `localhost:15672`. PostgreSQL usa el puerto `5432`; los backends usan `8081`, `8082`, `8083` y `8090`.
+
+## Integración continua
+
+GitHub Actions compila los nueve módulos y ejecuta sus pruebas al hacer `push` o abrir/actualizar un pull request. Para ejecutar la misma validación localmente, usa `mvn --batch-mode --no-transfer-progress verify` desde la raíz.
 ## Modelo de dominio
 
 El detector mantiene un agregado `SensorVibrationWindow` por sensor, que valida lecturas, conserva una ventana móvil de tres valores y gobierna las transiciones de criticidad. `CriticityStrategy` separa la política de evaluación de la infraestructura Kafka; `ThresholdCriticityStrategy` aplica las reglas del ejercicio: crítica por encima de 90 y advertencia con tres lecturas consecutivas por encima de 75.

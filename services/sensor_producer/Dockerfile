@@ -12,8 +12,6 @@ COPY services/action_dispatcher/pom.xml services/action_dispatcher/pom.xml
 COPY services/actuator_worker/pom.xml services/actuator_worker/pom.xml
 COPY services/maintenance_worker/pom.xml services/maintenance_worker/pom.xml
 COPY services/history_service/pom.xml services/history_service/pom.xml
-RUN mvn -pl services/sensor_producer -am dependency:go-offline -B
-
 COPY services/sensor_producer/src ./services/sensor_producer/src
 RUN mvn -pl services/sensor_producer -am clean package -DskipTests -B
 

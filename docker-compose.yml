@@ -1,3 +1,8 @@
+networks:
+  default:
+    name: iot-industrial_default
+    driver: bridge
+
 services:
   kafka:
     image: apache/kafka:3.9.1
@@ -21,6 +26,15 @@ services:
     volumes:
       - kafka_data:/var/lib/kafka/data
 
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:19092 --list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 30s
+
+
   rabbitmq:
     build:
       context: ./infra/rabbitmq
@@ -34,6 +48,13 @@ services:
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set in .env}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
 
   postgres:
     image: postgres:16
@@ -53,17 +74,21 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
 
   sensor_producer:
     build:
       context: .
       dockerfile: services/sensor_producer/Dockerfile
     image: iot-industrial-sensor_producer:local
+    ports:
+      - "8084:8084"
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:19092
-      SERVER_PORT: 0
+      SERVER_PORT: 8084
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     deploy:
       resources:
         limits:
@@ -80,7 +105,8 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:19092
       SERVER_PORT: 0
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     deploy:
       resources:
         limits:
@@ -101,8 +127,10 @@ services:
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set in .env}
       SERVER_PORT: 0
     depends_on:
-      - kafka
-      - rabbitmq
+      kafka:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     deploy:
       resources:
         limits:
@@ -121,7 +149,14 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:19092
       SERVER_PORT: 8081
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8081/actuator/health | grep -q 'UP'"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 45s
     deploy:
       resources:
         limits:
@@ -144,8 +179,16 @@ services:
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set in .env}
       SERVER_PORT: 8082
     depends_on:
-      - kafka
-      - rabbitmq
+      kafka:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8082/actuator/health | grep -q 'UP'"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 45s
     deploy:
       resources:
         limits:
@@ -171,9 +214,15 @@ services:
       SERVER_PORT: 8083
     depends_on:
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8083/actuator/health | grep -q 'UP'"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
     deploy:
       resources:
         limits:
@@ -196,11 +245,11 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
     depends_on:
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
       postgres:
         condition: service_healthy
       action_dispatcher:
-        condition: service_started
+        condition: service_healthy
     deploy:
       replicas: 2
       resources:
@@ -224,11 +273,11 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
     depends_on:
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
       postgres:
         condition: service_healthy
       action_dispatcher:
-        condition: service_started
+        condition: service_healthy
     deploy:
       replicas: 2
       resources:
@@ -258,9 +307,15 @@ services:
       postgres:
         condition: service_healthy
       kafka:
-        condition: service_started
+        condition: service_healthy
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8090/actuator/health | grep -q 'UP'"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
     deploy:
       resources:
         limits:

@@ -10,6 +10,7 @@ public final class SensorVibrationWindow {
     private final ArrayDeque<Double> readings = new ArrayDeque<>();
     private SensorState state = new NormalState();
     private boolean warningRaised;
+    private boolean criticalRaised;
 
     public SensorVibrationWindow(String sensorId) {
         this.sensorId = new SensorId(sensorId);
@@ -30,9 +31,18 @@ public final class SensorVibrationWindow {
         return state.status() == SensorStatus.WARNING && !warningRaised;
     }
 
+    public boolean criticalThresholdReached() {
+        return state.status() == SensorStatus.CRITICAL && !criticalRaised;
+    }
+
     public void acknowledgeWarning() {
         if (state.status() != SensorStatus.WARNING) throw new IllegalStateException("No hay advertencia pendiente");
         warningRaised = true;
+    }
+
+    public void acknowledgeCritical() {
+        if (state.status() != SensorStatus.CRITICAL) throw new IllegalStateException("No hay alerta crÃ­tica pendiente");
+        criticalRaised = true;
     }
 
     public String sensorId() { return sensorId.value(); }
@@ -40,6 +50,9 @@ public final class SensorVibrationWindow {
     private void transitionTo(SensorStatus next) {
         SensorStatus previous = state.status();
         state = state.transitionTo(next);
-        if (previous != next && (next == SensorStatus.WARNING || next == SensorStatus.NORMAL)) warningRaised = false;
+        if (previous != next) {
+            warningRaised = false;
+            criticalRaised = false;
+        }
     }
 }
