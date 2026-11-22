@@ -5,7 +5,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.Map;
+import com.example.iot.actiondispatcher.dto.request.DecisionRequest;
+import com.example.iot.actiondispatcher.dto.response.DecisionResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -25,14 +26,15 @@ class DecisionControllerTest {
         when(decisionApplicationService.decide(any(OperatorDecision.class))).thenReturn(queued);
         DecisionController controller = new DecisionController(decisionApplicationService);
 
-        ResponseEntity<Map<String, String>> response = controller.receiveDecision(
-                new OperatorDecision("alert-1", "sensor_A", "APAGADO_INMEDIATO"));
+        ResponseEntity<?> response = controller.receiveDecision(
+                new DecisionRequest("alert-1", "sensor_A", "APAGADO_INMEDIATO"));
 
         assertEquals(HttpStatus.ACCEPTED, response.getStatusCode());
-        assertEquals(queued.decisionId(), response.getBody().get("decision_id"));
-        assertEquals("alert-1", response.getBody().get("alert_id"));
-        assertEquals("actuator", response.getBody().get("routing_key"));
-        assertEquals("QUEUED", response.getBody().get("decision_status"));
+        DecisionResponse body = (DecisionResponse) response.getBody();
+        assertEquals(queued.decisionId(), body.decisionId());
+        assertEquals("alert-1", body.alertId());
+        assertEquals("actuator", body.routingKey());
+        assertEquals("QUEUED", body.decisionStatus());
         verify(decisionApplicationService).decide(any(OperatorDecision.class));
     }
 }

@@ -1,11 +1,17 @@
 package com.example.iot.historyservice.controller;
 
+import com.example.iot.historyservice.dto.response.AlertResponse;
+import com.example.iot.historyservice.dto.response.OperatorDecisionResponse;
+import com.example.iot.historyservice.dto.response.SensorReadingResponse;
 import com.example.iot.historyservice.entity.Alert;
 import com.example.iot.historyservice.entity.OperatorDecision;
 import com.example.iot.historyservice.entity.SensorReading;
 import com.example.iot.historyservice.repository.AlertRepository;
 import com.example.iot.historyservice.repository.OperatorDecisionRepository;
 import com.example.iot.historyservice.repository.SensorReadingRepository;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -14,10 +20,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 
 @RestController
 @RequestMapping("/history")
 @CrossOrigin(origins = "*")
+@Validated
 public class HistoryController {
 
     private final AlertRepository alerts;
@@ -33,33 +41,32 @@ public class HistoryController {
     }
 
     @GetMapping("/alerts")
-    public List<Alert> alerts(@RequestParam(required = false) String sensorId,
-                              @RequestParam(defaultValue = "50") int limit) {
-        Pageable page = PageRequest.of(0, clamp(limit));
-        return sensorId == null
+    public List<AlertResponse> alerts(@RequestParam(required = false) @Size(max = 100) String sensorId,
+                              @RequestParam(defaultValue = "50") @Min(1) @Max(500) int limit) {
+        Pageable page = PageRequest.of(0, limit);
+        List<Alert> results = sensorId == null
                 ? alerts.findAllByOrderByCreatedAtDesc(page)
                 : alerts.findBySensorIdOrderByCreatedAtDesc(sensorId, page);
+        return results.stream().map(AlertResponse::from).toList();
     }
 
     @GetMapping("/decisions")
-    public List<OperatorDecision> decisions(@RequestParam(required = false) String sensorId,
-                                            @RequestParam(defaultValue = "50") int limit) {
-        Pageable page = PageRequest.of(0, clamp(limit));
-        return sensorId == null
+    public List<OperatorDecisionResponse> decisions(@RequestParam(required = false) @Size(max = 100) String sensorId,
+                                            @RequestParam(defaultValue = "50") @Min(1) @Max(500) int limit) {
+        Pageable page = PageRequest.of(0, limit);
+        List<OperatorDecision> results = sensorId == null
                 ? decisions.findAllByOrderByDecidedAtDesc(page)
                 : decisions.findBySensorIdOrderByDecidedAtDesc(sensorId, page);
+        return results.stream().map(OperatorDecisionResponse::from).toList();
     }
 
     @GetMapping("/readings")
-    public List<SensorReading> readings(@RequestParam(required = false) String sensorId,
-                                        @RequestParam(defaultValue = "50") int limit) {
-        Pageable page = PageRequest.of(0, clamp(limit));
-        return sensorId == null
+    public List<SensorReadingResponse> readings(@RequestParam(required = false) @Size(max = 100) String sensorId,
+                                        @RequestParam(defaultValue = "50") @Min(1) @Max(500) int limit) {
+        Pageable page = PageRequest.of(0, limit);
+        List<SensorReading> results = sensorId == null
                 ? readings.findAllByOrderByRecordedAtDesc(page)
                 : readings.findBySensorIdOrderByRecordedAtDesc(sensorId, page);
-    }
-
-    private int clamp(int limit) {
-        return Math.max(1, Math.min(limit, 500));
+        return results.stream().map(SensorReadingResponse::from).toList();
     }
 }
