@@ -9,6 +9,12 @@ public class OperatorDecision {
     public OperatorDecision() {
     }
 
+    public OperatorDecision(String alertId, String sensorId, String action) {
+        this.alert_id = alertId;
+        this.sensor_id = sensorId;
+        this.action = action;
+    }
+
     public String getAlert_id() {
         return alert_id;
     }

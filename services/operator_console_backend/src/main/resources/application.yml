@@ -10,3 +10,9 @@ spring:
     password: ${RABBITMQ_PASSWORD:iot_dev_password}
 server:
   port: ${SERVER_PORT:8082}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

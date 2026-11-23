@@ -7,6 +7,24 @@
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USER:iot}
     password: ${RABBITMQ_PASSWORD:iot_dev_password}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/iot_history}
+    username: ${SPRING_DATASOURCE_USERNAME:${POSTGRES_USER:usuario_local}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${POSTGRES_PASSWORD:contrasena_local}}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
 
 server:
   port: ${SERVER_PORT:8083}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

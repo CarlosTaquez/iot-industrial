@@ -26,6 +26,9 @@ public class SensorReading {
     protected SensorReading() {}
 
     public SensorReading(String sensorId, Double vibration, Instant recordedAt) {
+        if (sensorId == null || sensorId.isBlank()) throw new IllegalArgumentException("sensorId es obligatorio");
+        if (vibration == null || !Double.isFinite(vibration) || vibration < 0 || vibration > 100) throw new IllegalArgumentException("vibration debe estar entre 0 y 100");
+        if (recordedAt == null) throw new IllegalArgumentException("recordedAt es obligatorio");
         this.sensorId = sensorId;
         this.vibration = vibration;
         this.recordedAt = recordedAt;

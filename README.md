@@ -1,37 +1,49 @@
-# Plataforma de mantenimiento predictivo IoT — base inicial
+# Plataforma de mantenimiento predictivo IoT
 
-**Estado:** estructura inicial, no implementación completa. Los ocho proyectos Java compilan por separado, pero aún no contienen lógica de negocio. El Compose inicial levanta **solo Kafka y RabbitMQ**.
+Proyecto académico local para monitoreo industrial y mantenimiento predictivo. La solución se ejecuta con Docker Compose y está formada por microservicios Java 17/Spring Boot, Kafka, RabbitMQ y PostgreSQL.
 
-## Requisitos
-- Docker Desktop con Docker Compose
-- Java 17 y Maven para ejecución local de microservicios
+## Inicio local
 
-## Arranque
+Requisitos: Docker Desktop con Docker Compose. Las imagenes de los servicios Java se compilan desde sus Dockerfiles.
+
 ```powershell
 Copy-Item .env.example .env
-docker compose up -d
-docker compose ps
+docker compose up -d --build
 ```
 
-RabbitMQ Management: http://localhost:15672 (credenciales en `.env`). Kafka: localhost:9092 desde Windows; kafka:19092 desde otros contenedores. RabbitMQ: localhost:5672 desde Windows; rabbitmq:5672 desde otros contenedores.
+El unico archivo `docker-compose.yml` configura Kafka, RabbitMQ, PostgreSQL y todos los microservicios. Compose publica Kafka en `localhost:9092`, RabbitMQ en `localhost:5672` y su consola en `localhost:15672`. PostgreSQL usa el puerto `5432`; los backends usan `8081`, `8082`, `8083` y `8090`.
 
-## Ejecutar history_service con Docker Compose
+## Integración continua
 
-Con `.env` creado y los temas Kafka existentes, inicia Kafka, RabbitMQ, PostgreSQL e `history_service` usando los tres archivos Compose:
+GitHub Actions compila los nueve módulos y ejecuta sus pruebas al hacer `push` o abrir/actualizar un pull request. Para ejecutar la misma validación localmente, usa `mvn --batch-mode --no-transfer-progress verify` desde la raíz.
+## Modelo de dominio
+
+El detector mantiene un agregado `SensorVibrationWindow` por sensor, que valida lecturas, conserva una ventana móvil de tres valores y gobierna las transiciones de criticidad. `CriticityStrategy` separa la política de evaluación de la infraestructura Kafka; `ThresholdCriticityStrategy` aplica las reglas del ejercicio: crítica por encima de 90 y advertencia con tres lecturas consecutivas por encima de 75.
+
+`IndustrialAlert` valida severidad y acciones y protege su transición de pendiente a resuelta/ignorada. `MaintenanceDecision` valida la elección del operador y limita su transición a despachada. El productor publica `VibrationReadingRecord`, un contrato inmutable con validación fail-fast.
+
+El dispatcher consulta la alerta en PostgreSQL, confirma que pertenece al sensor, permite solo acciones válidas para su severidad y registra la resolución, la auditoría y el mensaje de outbox dentro de una transacción. El relay publica el mensaje, espera confirmación del broker y reintenta si falla. Los workers guardan recibos por `decision_id` para ignorar redeliveries. `alert_resolutions` impide aceptar otra decisión para esa alerta. Para una base ya creada, aplica una vez la migración:
 
 ```powershell
-docker compose -f docker-compose.yml -f docker-compose.postgres.yml -f docker-compose.history.yml up -d --build
+docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f /migrations/001_decision_id.sql'
 ```
 
-Para revisar la configuración combinada antes de iniciar contenedores:
+Una base vacía recibe el esquema actualizado desde `database/init.sql`.
 
-```powershell
-docker compose -f docker-compose.yml -f docker-compose.postgres.yml -f docker-compose.history.yml config
-```
+RabbitMQ se construye desde `infra/rabbitmq/Dockerfile` con el plugin Delayed Message Exchange. `RECONOCER_Y_ESPERAR_24H` envía un mensaje con `x-delay` de 24 horas. El plugin exige compatibilidad entre su versión y RabbitMQ; aquí se fija la versión 3.13.0 con RabbitMQ 3.13.
 
-El servicio queda disponible en `http://localhost:8090`. `depends_on` ordena el inicio, pero no espera a que las dependencias estén listas; `history_service` tiene política de reinicio `unless-stopped`. Para ejecutar Java localmente, los valores predeterminados de conexión siguen apuntando a `localhost`.
+## Flujo principal
 
-## Crear los topics (después de arrancar Kafka)
+1. `sensor_producer` publica lecturas en `sensor_data`, usando el identificador del sensor como clave Kafka.
+2. `alert_detector` calcula estado y alertas y publica en `sensor_status`, `alerts_critical` y `alerts_warning`.
+3. `alert_router` remite alertas a RabbitMQ para la consola del operador.
+4. `action_dispatcher` recibe decisiones y las enruta a los workers de actuador o mantenimiento.
+5. `history_service` persiste telemetría, alertas y decisiones en PostgreSQL.
+
+## Temas Kafka
+
+Crear los temas tras iniciar Kafka:
+
 ```powershell
 docker compose exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:19092 --create --if-not-exists --topic sensor_data --partitions 3 --replication-factor 1
 docker compose exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:19092 --create --if-not-exists --topic sensor_status --partitions 3 --replication-factor 1
@@ -39,34 +51,17 @@ docker compose exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafk
 docker compose exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:19092 --create --if-not-exists --topic alerts_warning --partitions 3 --replication-factor 1
 ```
 
-## Ejecutar un microservicio local (ejemplo)
+Las credenciales de `.env` son solo para desarrollo local. No subas ese archivo al repositorio.
+
+## Pruebas unitarias
+
+Ejecutar desde cada módulo que tiene pruebas de dominio:
+
 ```powershell
-cd services/sensor_producer
-mvn spring-boot:run
+mvn -f services/sensor_producer/pom.xml test
+mvn -f services/alert_detector/pom.xml test
+mvn -f services/alert_router/pom.xml test
+mvn -f services/action_dispatcher/pom.xml test
 ```
 
-## Contratos
-Ejemplos en `contracts/examples/`. `sensor_id` debe ser la **key** de Kafka para conservar orden por sensor dentro de una partición.
-- `sensor_data`: lecturas de vibración.
-- `sensor_status`: estado NORMAL/WARNING/CRITICAL; el productor/detector deberá publicarlo según el diseño acordado.
-- `alerts_critical` y `alerts_warning`: mensajes con `alert_id` único.
-- RabbitMQ fanout `human_alerts`: mensaje `human_alert.json`.
-- `POST /decide` en action_dispatcher, puerto 8083: `decision.json`.
-- RabbitMQ colas `critical_actions_queue`, `maintenance_queue`: `command.json`.
-- WebSockets previstos: puerto 8081 (monitoreo) y 8082 (consola); rutas por definir.
-
-## Acciones
-- `APAGADO_INMEDIATO`: cola crítica.
-- `PROGRAMAR_MANTENIMIENTO_AHORA`: cola de mantenimiento.
-- `RECONOCER_Y_ESPERAR_24H`: mensaje diferido 24 horas hacia mantenimiento.
-- `IGNORAR_10_MINUTOS`: definir comportamiento y expiración/supresión de alertas antes de implementar.
-
-## Pendientes esenciales
-1. Implementar los 8 servicios y dashboard.
-2. Configurar exchanges, bindings y colas RabbitMQ.
-3. **Instalar y habilitar** el plugin `rabbitmq_delayed_message_exchange` en una imagen compatible. **No está habilitado en esta base**.
-4. Integrar los Dockerfiles en Compose con healthchecks y variables para red interna.
-5. Validar `alert_id` y opciones permitidas en el dispatcher; evitar decisiones repetidas.
-6. Pruebas de ventanas móviles y extremo a extremo.
-
-**Seguridad:** credenciales solo para desarrollo local. No publicar `.env`.
+Cada microservicio tiene su propio `pom.xml`, que hereda la configuración común del POM raíz. Docker Compose construye cada imagen Java desde el contexto raíz y selecciona el módulo correspondiente.

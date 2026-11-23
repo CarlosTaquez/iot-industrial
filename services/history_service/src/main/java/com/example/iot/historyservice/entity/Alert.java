@@ -28,6 +28,9 @@ public class Alert {
     @Column(name = "occurred_at")
     private Instant occurredAt;
 
+    @Column(nullable = false)
+    private String status;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(nullable = false, columnDefinition = "jsonb")
     private String payload;
@@ -39,12 +42,19 @@ public class Alert {
 
     public Alert(String sensorId, String severity, Double vibrationValue, String payload,
                  String alertId, Instant occurredAt) {
+        if (sensorId == null || sensorId.isBlank()) throw new IllegalArgumentException("sensorId es obligatorio");
+        if (alertId == null || alertId.isBlank()) throw new IllegalArgumentException("alertId es obligatorio");
+        if (!"CRITICAL".equals(severity) && !"WARNING".equals(severity)) throw new IllegalArgumentException("severity no permitida");
+        if (vibrationValue != null && (!Double.isFinite(vibrationValue) || vibrationValue < 0 || vibrationValue > 100)) throw new IllegalArgumentException("vibrationValue fuera de rango");
+        if (payload == null || payload.isBlank()) throw new IllegalArgumentException("payload es obligatorio");
+        if (occurredAt == null) throw new IllegalArgumentException("occurredAt es obligatorio");
         this.sensorId = sensorId;
         this.severity = severity;
         this.vibrationValue = vibrationValue;
         this.payload = payload;
         this.alertId = alertId;
         this.occurredAt = occurredAt;
+        this.status = "PENDING";
     }
 
     public Long getId() { return id; }
@@ -53,6 +63,7 @@ public class Alert {
     public String getSeverity() { return severity; }
     public Double getVibrationValue() { return vibrationValue; }
     public Instant getOccurredAt() { return occurredAt; }
+    public String getStatus() { return status; }
     public String getPayload() { return payload; }
     public Instant getCreatedAt() { return createdAt; }
 }
