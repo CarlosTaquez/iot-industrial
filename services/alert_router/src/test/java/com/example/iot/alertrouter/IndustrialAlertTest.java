@@ -1,6 +1,9 @@
 package com.example.iot.alertrouter;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+import com.example.iot.alertrouter.domain.model.AlertSeverity;
+import com.example.iot.alertrouter.domain.model.IndustrialAlert;
 import org.junit.jupiter.api.Test;
 
 class IndustrialAlertTest {

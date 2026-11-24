@@ -1,6 +1,6 @@
 package com.example.iot.historyservice.dto.response;
 
-import com.example.iot.historyservice.entity.Alert;
+import com.example.iot.historyservice.persistence.entity.Alert;
 import java.time.Instant;
 
 /** Public API representation of a stored alert. */

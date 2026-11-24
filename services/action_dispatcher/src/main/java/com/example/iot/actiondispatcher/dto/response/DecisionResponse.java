@@ -1,8 +1,7 @@
 package com.example.iot.actiondispatcher.dto.response;
 
-import com.example.iot.actiondispatcher.MaintenanceDecision;
+import com.example.iot.actiondispatcher.domain.model.MaintenanceDecision;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 
 public record DecisionResponse(
         String status,

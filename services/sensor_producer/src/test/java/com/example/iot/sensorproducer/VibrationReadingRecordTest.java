@@ -1,6 +1,8 @@
 package com.example.iot.sensorproducer;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+import com.example.iot.sensorproducer.messaging.event.VibrationReadingRecord;
 import org.junit.jupiter.api.Test;
 
 class VibrationReadingRecordTest {

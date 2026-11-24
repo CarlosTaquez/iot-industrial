@@ -7,6 +7,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.example.iot.alertdetector.domain.model.SensorStatus;
+import com.example.iot.alertdetector.domain.strategy.CriticityStrategy;
+import com.example.iot.alertdetector.messaging.consumer.AlertDetector;
+import com.example.iot.alertdetector.messaging.event.AlertEventRecord;
+import com.example.iot.alertdetector.messaging.event.SensorStatusRecord;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import org.junit.jupiter.api.Test;

@@ -1,6 +1,11 @@
 package com.example.iot.alertdetector;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+import com.example.iot.alertdetector.domain.model.SensorStatus;
+import com.example.iot.alertdetector.domain.model.SensorVibrationWindow;
+import com.example.iot.alertdetector.domain.strategy.CriticityStrategy;
+import com.example.iot.alertdetector.domain.strategy.ThresholdCriticityStrategy;
 import org.junit.jupiter.api.Test;
 
 class SensorVibrationWindowTest {

@@ -1,6 +1,6 @@
 package com.example.iot.actiondispatcher.dto.request;
 
-import com.example.iot.actiondispatcher.OperatorDecision;
+import com.example.iot.actiondispatcher.application.command.OperatorDecision;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 
