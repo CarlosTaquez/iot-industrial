@@ -4,6 +4,16 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import com.example.iot.actiondispatcher.application.DecisionApplicationService;
+import com.example.iot.actiondispatcher.application.command.OperatorDecision;
+import com.example.iot.actiondispatcher.domain.model.MaintenanceDecision;
+import com.example.iot.actiondispatcher.persistence.entity.AlertRecord;
+import com.example.iot.actiondispatcher.persistence.entity.AlertResolution;
+import com.example.iot.actiondispatcher.persistence.entity.DecisionOutboxRecord;
+import com.example.iot.actiondispatcher.persistence.repository.AlertRecordRepository;
+import com.example.iot.actiondispatcher.persistence.repository.AlertResolutionRepository;
+import com.example.iot.actiondispatcher.persistence.repository.DecisionAuditRepository;
+import com.example.iot.actiondispatcher.persistence.repository.DecisionOutboxRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;

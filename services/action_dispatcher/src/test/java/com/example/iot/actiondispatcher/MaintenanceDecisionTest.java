@@ -1,6 +1,9 @@
 package com.example.iot.actiondispatcher;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+import com.example.iot.actiondispatcher.domain.model.DecisionAction;
+import com.example.iot.actiondispatcher.domain.model.MaintenanceDecision;
 import org.junit.jupiter.api.Test;
 
 class MaintenanceDecisionTest {

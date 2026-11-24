@@ -2,6 +2,10 @@
 
 Proyecto académico local para monitoreo industrial y mantenimiento predictivo. La solución se ejecuta con Docker Compose y está formada por microservicios Java 17/Spring Boot, Kafka, RabbitMQ y PostgreSQL.
 
+## Estructura del codigo Java
+
+Los microservicios organizan sus clases por responsabilidad dentro de su paquete base: `api` contiene controladores y manejo HTTP; `application` coordina casos de uso; `domain` contiene reglas y modelos de negocio; `dto` define los contratos HTTP; `persistence` agrupa entidades y repositorios; `messaging` contiene productores, consumidores y eventos; `config` guarda configuraciones de Spring. Los servicios con WebSocket agrupan sus handlers en `websocket`. La clase `*Application` permanece en el paquete base para que Spring detecte los componentes de los subpaquetes.
+
 ## Inicio local
 
 Requisitos: Docker Desktop con Docker Compose. Las imagenes de los servicios Java se compilan desde sus Dockerfiles.
